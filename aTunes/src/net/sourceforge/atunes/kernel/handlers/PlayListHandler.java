@@ -43,6 +43,7 @@ import net.sourceforge.atunes.model.player.PlayList;
 import net.sourceforge.atunes.model.player.PlayListAlbumComparator;
 import net.sourceforge.atunes.model.player.PlayListArtistComparator;
 import net.sourceforge.atunes.model.player.PlayListGenreComparator;
+import net.sourceforge.atunes.model.player.PlayListDurationComparator; // CR1
 import net.sourceforge.atunes.model.player.PlayListListener;
 import net.sourceforge.atunes.model.player.PlayListTitleComparator;
 import net.sourceforge.atunes.model.player.PlayListTrackComparator;
@@ -196,6 +197,10 @@ public class PlayListHandler {
 		sortPlayList(PlayListGenreComparator.comparator);
 	}
 	
+	// sort by duration is added here (CR1)
+	public void sortPlaylistByDuration() {
+		sortPlayList(PlayListDurationComparator.comparator);
+	}	
 	
 	private static ArrayList<String> read(File file) {
 		try{

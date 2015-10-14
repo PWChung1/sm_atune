@@ -115,7 +115,7 @@ public class PlayListController extends PanelController implements PlayListColum
 	
 	protected void notifyReload() {}
 	
-	public void columnClicked(String column) {
+	public void columnClicked(String column) {  // this is the location for CR1
 		if (column.equals(LanguageTool.getString("TRACK"))) { 
 			HandlerProxy.getPlayListHandler().sortPlaylistByTrack();
 		}
@@ -127,8 +127,10 @@ public class PlayListController extends PanelController implements PlayListColum
 		else if (column.equals(LanguageTool.getString("ALBUM")))
 			HandlerProxy.getPlayListHandler().sortPlaylistByAlbum();
 		else if (column.equals(LanguageTool.getString("GENRE")))
-			HandlerProxy.getPlayListHandler().sortPlaylistByGenre();
-			}
+			HandlerProxy.getPlayListHandler().sortPlaylistByGenre();  
+		else if (column.equals(LanguageTool.getString("DURATION")))// here,  sorting by Duration is added (CR1)
+		HandlerProxy.getPlayListHandler().sortPlaylistByDuration();
+		}
 	
 	public void updatePositionInTable(int pos) {
 		((PlayListTableModel)((PlayListPanel) panelControlled).getPlayListTable().getModel()).refresh(pos);
