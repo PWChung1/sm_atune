@@ -45,9 +45,9 @@ public class PlayListTableModel implements TableModel {
 	private boolean genreVisible = true;
 	private boolean durationVisible = true;
 
-	private enum PlayListColumn {FAVORITE, TRACK, TITLE, ARTIST, ALBUM, GENRE, DURATION}
+	private enum PlayListColumn {FAVORITE, TRACK, TITLE, ARTIST, ALBUM, GENRE, DURATION, PATH_FILE}
 	private static PlayListColumn[] headers = {PlayListColumn.FAVORITE, PlayListColumn.TRACK, PlayListColumn.TITLE, PlayListColumn.ARTIST, PlayListColumn.ALBUM, 
-		PlayListColumn.GENRE, PlayListColumn.DURATION};
+		PlayListColumn.GENRE, PlayListColumn.DURATION, PlayListColumn.PATH_FILE};
 	private PlayListColumn[] currentHeaders;
 	private static HashMap<PlayListColumn, Class> classes;
 	
@@ -60,6 +60,7 @@ public class PlayListTableModel implements TableModel {
 		classes.put(PlayListColumn.ALBUM, String.class);
 		classes.put(PlayListColumn.GENRE, String.class);
 		classes.put(PlayListColumn.DURATION, Long.class);
+		classes.put(PlayListColumn.PATH_FILE, String.class);
 	}
 	
 	private static HashMap<PlayListColumn, String> columnNames;
@@ -73,6 +74,7 @@ public class PlayListTableModel implements TableModel {
 		columnNames.put(PlayListColumn.ALBUM, LanguageTool.getString("ALBUM"));
 		columnNames.put(PlayListColumn.GENRE, LanguageTool.getString("GENRE"));
 		columnNames.put(PlayListColumn.DURATION, LanguageTool.getString("DURATION"));
+		columnNames.put(PlayListColumn.PATH_FILE, LanguageTool.getString("SHOW_PATH_FILE"));
 	}
 	
 	public PlayListTableModel() {
@@ -107,6 +109,8 @@ public class PlayListTableModel implements TableModel {
 			currentHeaders[c++] = PlayListColumn.GENRE;
 		if(durationVisible)
 			currentHeaders[c++] = PlayListColumn.DURATION;
+		
+		currentHeaders[c++] = PlayListColumn.PATH_FILE; 
 	}
 	
 	private PlayListColumn getColumn(int colIndex) {
@@ -149,8 +153,10 @@ public class PlayListTableModel implements TableModel {
 			return file.getAlbum();
 		else if (c == PlayListColumn.GENRE)
 			return file.getGenre();
-		else 
+		else if( c== PlayListColumn.DURATION)	// This needs to be tracked - CR2
 			return file.getDuration();
+		else
+			return file.getAbsolutePath();
 	}
 
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
