@@ -151,23 +151,11 @@ public class MenuController extends Controller {
 	}
 	
 	public void disablePlayListItems(boolean disable) {
-		menu.getPlayListPlay().setEnabled(!disable);
-		menu.getPlayListInfo().setEnabled(!disable);
-		menu.getPlayListDelete().setEnabled(!disable);
-		menu.getPlayListClear().setEnabled(true);
-		menu.getPlayListTop().setEnabled(!disable);
-		menu.getPlayListUp().setEnabled(!disable);
-		menu.getPlayListDown().setEnabled(!disable);
-		menu.getPlayListBottom().setEnabled(!disable);
-		menu.getPlayListFavoriteSong().setEnabled(!disable);
-		menu.getPlayListFavoriteAlbum().setEnabled(!disable);
-		menu.getPlayListFavoriteArtist().setEnabled(!disable);
-		menu.getPlayListArtist().setEnabled(!disable);
-		menu.getPlayListAlbum().setEnabled(!disable);
+		menu.disablePlayListItems(disable);
 	}
 	
 	protected void addStateBindings() {
-		disablePlayListItems(true);
+		menu.disablePlayListItems(true);
 		menu.getShowOSD().setSelected(Kernel.getInstance().state.isShowOSD());
 		setDeviceConnected(false);
 	}

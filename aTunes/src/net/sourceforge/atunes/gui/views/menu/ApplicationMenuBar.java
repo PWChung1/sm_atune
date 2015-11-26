@@ -460,4 +460,20 @@ public class ApplicationMenuBar extends JMenuBar {
 		return mute;
 	}
 
+	public void disablePlayListItems(boolean disable) {
+		getPlayListPlay().setEnabled(!disable);
+		getPlayListInfo().setEnabled(!disable);
+		getPlayListDelete().setEnabled(!disable);
+		getPlayListClear().setEnabled(true);
+		getPlayListTop().setEnabled(!disable);
+		getPlayListUp().setEnabled(!disable);
+		getPlayListDown().setEnabled(!disable);
+		getPlayListBottom().setEnabled(!disable);
+		getPlayListFavoriteSong().setEnabled(!disable);
+		getPlayListFavoriteAlbum().setEnabled(!disable);
+		getPlayListFavoriteArtist().setEnabled(!disable);
+		getPlayListArtist().setEnabled(!disable);
+		getPlayListAlbum().setEnabled(!disable);
+	}
+
 }
