@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
@@ -38,6 +39,7 @@ import net.sourceforge.atunes.utils.language.LanguageTool;
 import org.apache.log4j.Logger;
 import org.farng.mp3.MP3File;
 import org.farng.mp3.TagConstant;
+import org.farng.mp3.TagException;
 import org.farng.mp3.TagOptionSingleton;
 import org.farng.mp3.id3.AbstractID3v2;
 import org.farng.mp3.id3.AbstractID3v2Frame;
@@ -122,7 +124,15 @@ public class TagModifier {
 		}
 	}
 	
-	private static void saveMp3Tag(AudioFile file, Tag tag, boolean writePicture, File imageFile) {
+	/** The refactored method which is having all the duplicate code.
+	 * 
+	 * @param file
+	 * @param tag
+	 * @param writePicture
+	 * @param imageFile
+	 * @return
+	 */
+	private static ID3v2_4 processTagInfo(AudioFile file, Tag tag, boolean writePicture, File imageFile) {
 		String title = tag.getTitle() != null ? tag.getTitle() : "";
 		String album = tag.getAlbum() != null ? tag.getAlbum() : "";
 		String artist = tag.getArtist() != null ? tag.getArtist() : ""; 
@@ -160,10 +170,14 @@ public class TagModifier {
 		frameBody = new FrameBodyCOMM((byte) 0, "", "", comment);
 		frame = new ID3v2_4Frame(frameBody);
 		tag2.setFrame(frame);
+		
+		// Read image stream
+		FileInputStream stream = null;
+		
 		try {
 			if (writePicture) {
 				if (imageFile != null) {
-					FileInputStream stream = new FileInputStream(imageFile);
+					stream = new FileInputStream(imageFile);
 					long fileLength = imageFile.length();
 					byte[] data = new byte[(int) fileLength];
 					stream.read(data);
@@ -183,14 +197,54 @@ public class TagModifier {
 					}
 				}
 			}
+		} catch (Exception e) {
+			HandlerProxy.getVisualHandler().showErrorDialog(LanguageTool.getString("COULD_NOT_EDIT_TAG"));
+			logger.error("Could not edit tag");
+			logger.debug(e);
+		} finally {
+			if(stream != null) {
+				try {
+					stream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return tag2;
+	}
+	
+	/**
+	 * Common code for saving the tags to the file used by many functions.
+	 * @param tag
+	 * @param file
+	 */
+	private static void writeTagsToFile(ID3v2_4 tag,AudioFile file) {
+		MP3File mp3File = new MP3File();
+		TagOptionSingleton.getInstance().setOriginalSavedAfterAdjustingID3v2Padding(false);
+		TagOptionSingleton.getInstance().setDefaultSaveMode(TagConstant.MP3_FILE_SAVE_OVERWRITE);
+		
+		mp3File.setID3v2Tag(tag);
+		try {
+			mp3File.save(file);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TagException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	// This method is refactored to remove the duplicate code
+	private static void saveMp3Tag(AudioFile file, Tag tag, boolean writePicture, File imageFile) {
+		try {
+			
+			ID3v2_4 tag2 = processTagInfo(file, tag, writePicture, imageFile);
 			
 			// Write tags to file
-			MP3File mp3File = new MP3File();
-			TagOptionSingleton.getInstance().setOriginalSavedAfterAdjustingID3v2Padding(false);
-			TagOptionSingleton.getInstance().setDefaultSaveMode(TagConstant.MP3_FILE_SAVE_OVERWRITE);
-			//mp3File.setID3v1Tag(tag1_1);
-			mp3File.setID3v2Tag(tag2);
-			mp3File.save(file);
+			writeTagsToFile(tag2, file);
+			
 		} catch (Exception e) {
 			HandlerProxy.getVisualHandler().showErrorDialog(LanguageTool.getString("COULD_NOT_EDIT_TAG"));
 			logger.error("Could not edit tag");
@@ -225,70 +279,10 @@ public class TagModifier {
 	}
 	
 	private static void saveMp3Title(AudioFile file, String newTitle) {
-		Tag tag = file.getTag();
+		ID3v2_4 tag = processTagInfo(file, null, false, null);
+		deleteTags(file);
+		writeTagsToFile(tag, file);
 		
-		String title = newTitle;
-		String album = tag.getAlbum() != null ? tag.getAlbum() : "";
-		String artist = tag.getArtist() != null ? tag.getArtist() : ""; 
-		String year = Integer.toString(tag.getYear());
-		String comment = tag.getComment() != null ? tag.getComment() : "";
-		//int genre = tag.getGenre();
-		String genreString = tag.getGenre();
-		String trackNumber = null;
-		if (tag instanceof ID3v2Tag)
-			trackNumber = Integer.toString(((ID3v2Tag)tag).getTrackNumber());
-		
-		// ID3v2 tag
-		ID3v2_4 tag2 = new ID3v2_4();
-		AbstractID3v2Frame frame;
-		AbstractID3v2FrameBody frameBody;
-		
-		frameBody = new FrameBodyTIT2((byte) 0, title);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyTALB((byte) 0, album);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyTPE1((byte) 0, artist);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyTYER((byte) 0, year);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyTRCK((byte) 0, trackNumber);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyTCON((byte) 0, genreString);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		frameBody = new FrameBodyCOMM((byte) 0, "", "", comment);
-		frame = new ID3v2_4Frame(frameBody);
-		tag2.setFrame(frame);
-		try {
-			BufferedImage img = AudioFilePictureUtils.getInsidePictureAsBuffer(file, -1,-1); 
-			if (img != null) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ImageIO.write(img, "jpeg", baos);
-				byte[] data = baos.toByteArray();
-				frameBody = new FrameBodyAPIC((byte) 0, "image/jpeg", (byte) 0, "", data);
-				frame = new ID3v2_4Frame(frameBody);
-				tag2.setFrame(frame);
-			}
-			
-			deleteTags(file);
-			
-			// Write tags to file
-			MP3File mp3File = new MP3File();
-			TagOptionSingleton.getInstance().setOriginalSavedAfterAdjustingID3v2Padding(false);
-			TagOptionSingleton.getInstance().setDefaultSaveMode(TagConstant.MP3_FILE_SAVE_OVERWRITE);
-			mp3File.setID3v2Tag(tag2);
-			mp3File.save(file);
-		} catch (Exception e) {
-			HandlerProxy.getVisualHandler().showErrorDialog(LanguageTool.getString("COULD_NOT_EDIT_TAG"));
-			logger.error("Could not edit tag");
-			logger.debug(e);
-		}
-
 	}
 
 	private static void setMp3TrackNumber(AudioFile file, Integer track) {
@@ -358,6 +352,51 @@ public class TagModifier {
 
 	}
 
+	private static AbstractID3v2Frame createFrame(AudioFile file, String genre,ID3v2_4 tag2) {
+		Tag tag = file.getTag();
+		if (tag == null)
+			tag = new ID3v2Tag();
+		
+		String title = tag.getTitle() != null ? tag.getTitle() : "";
+		String album = tag.getAlbum() != null ? tag.getAlbum() : "";
+		String artist = tag.getArtist() != null ? tag.getArtist() : ""; 
+		String year = Integer.toString(tag.getYear());
+		String comment = tag.getComment() != null ? tag.getComment() : "";
+		//int genre = tag.getGenre();
+		String genreString = genre;
+		String trackNumber = null;
+		if (tag instanceof ID3v2Tag)
+			trackNumber = Integer.toString(((ID3v2Tag)tag).getTrackNumber());
+		
+		// ID3v2 tag
+		AbstractID3v2Frame frame;
+		AbstractID3v2FrameBody frameBody;
+		
+		frameBody = new FrameBodyTIT2((byte) 0, title);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyTALB((byte) 0, album);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyTPE1((byte) 0, artist);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyTYER((byte) 0, year);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyTRCK((byte) 0, trackNumber);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyTCON((byte) 0, genreString);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		frameBody = new FrameBodyCOMM((byte) 0, "", "", comment);
+		frame = new ID3v2_4Frame(frameBody);
+		tag2.setFrame(frame);
+		
+		return frame;
+	}
+	
 	private static void setMp3Genre(AudioFile file, String genre) {
 		Tag tag = file.getTag();
 		if (tag == null)
